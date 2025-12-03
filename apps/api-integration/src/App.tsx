@@ -5,6 +5,7 @@ import CurrentWeather from './components/CurrentWeather'
 import Forecast from './components/Forecast'
 import WeatherMap from './components/WeatherMap'
 import WeatherAlerts from './components/WeatherAlerts'
+import WeatherAlertModal from './components/WeatherAlertModal'
 import { getCurrentWeather, getWeatherForecast, WeatherAPIError } from './services/weatherApi'
 
 // Types for weather data
@@ -72,6 +73,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   // Search history
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  // Alert modal state
+  const [showAlertModal, setShowAlertModal] = useState<boolean>(false);
 
   // Load search history from localStorage on mount
   useEffect(() => {
@@ -93,6 +96,24 @@ function App() {
     }
   }, [searchHistory]);
 
+  // Check for severe weather alerts and show modal
+  const checkSevereAlerts = useCallback((alerts: WeatherData['alerts']) => {
+    if (!alerts || !alerts.alert || alerts.alert.length === 0) {
+      return;
+    }
+
+    // Check if there are severe/extreme/moderate alerts
+    // Including 'moderate' for better demonstration and user awareness
+    const hasSevereAlerts = alerts.alert.some(alert => {
+      const severity = alert.severity?.toLowerCase();
+      return severity === 'severe' || severity === 'extreme' || severity === 'moderate';
+    });
+
+    if (hasSevereAlerts) {
+      setShowAlertModal(true);
+    }
+  }, []);
+
   // Handle search for weather data - memoized with useCallback
   const handleSearch = useCallback(async (location: string) => {
     if (!location.trim()) {
@@ -107,6 +128,11 @@ function App() {
       // Fetch both current weather and 5-day forecast
       const forecastData = await getWeatherForecast(location, 5);
       setWeatherData(forecastData);
+      
+      // Show modal for severe weather alerts
+      if (forecastData.alerts) {
+        checkSevereAlerts(forecastData.alerts);
+      }
     } catch (err) {
       // Handle specific error types
       if (err instanceof WeatherAPIError) {
@@ -120,7 +146,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [checkSevereAlerts]);
 
   // Add search to history - memoized with useCallback
   const addToSearchHistory = useCallback((query: string) => {
@@ -197,6 +223,14 @@ function App() {
           )}
         </div>
       </main>
+
+      {/* Weather Alert Modal */}
+      {showAlertModal && weatherData?.alerts && (
+        <WeatherAlertModal 
+          alerts={weatherData.alerts}
+          onClose={() => setShowAlertModal(false)}
+        />
+      )}
 
       <footer className="app-footer">
         <p>
