@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import ButtonRequirement from './components/ButtonRequirement';
+import ShowcaseButton from './components/ShowcaseButton';
 
 const App: React.FC = () => {
 
@@ -28,8 +29,7 @@ const App: React.FC = () => {
           <h2>Your Solution</h2>
           <p>Implement your animated button component and showcase it below:</p>
           <div className="solution-demo">
-            {/* Replace this comment with your AnimatedButton component */}
-            <div className="placeholder-button">Your button will go here</div>
+            <ShowcaseButton />
           </div>
         </section>
       </main>
