@@ -9,6 +9,7 @@ const BUTTON_COMPRESS_DURATION = 400;
 const BUTTON_RELAX_DURATION = 400;
 const BUTTON_EXPAND_DURATION = 400;
 const TEXT_FADE_IN_DURATION = 300;
+const TEXT_FADE_IN_DELAY = 150; // Delay before text starts fading in after button expansion begins
 
 const StyledButton = styled.button<{ $size: ButtonSize; $animationState: ButtonAnimationState }>`
   position: relative;
@@ -111,9 +112,27 @@ const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number }>`
   white-space: nowrap;
   transition: opacity ${TEXT_FADE_IN_DURATION}ms ease-out;
   opacity: ${props => props.$isVisible ? 1 : 0};
+  pointer-events: none;
   
   @media (prefers-reduced-motion: reduce) {
     transition: opacity 0.01ms;
+  }
+`;
+
+const SuccessText = styled.span<{ $isVisible: boolean; $textLeft: number }>`
+  position: absolute;
+  left: ${props => props.$isVisible ? `${props.$textLeft}px` : '50%'};
+  top: 50%;
+  transform: ${props => props.$isVisible ? 'translateY(-50%)' : 'translate(-50%, -50%)'};
+  white-space: nowrap;
+  transition: opacity ${TEXT_FADE_IN_DURATION}ms ease-out,
+              left ${TEXT_FADE_IN_DURATION}ms ease-out,
+              transform ${TEXT_FADE_IN_DURATION}ms ease-out;
+  opacity: ${props => props.$isVisible ? 1 : 0};
+  pointer-events: none;
+  
+  @media (prefers-reduced-motion: reduce) {
+    transition: opacity 0.01ms, left 0.01ms, transform 0.01ms;
   }
 `;
 
@@ -131,10 +150,10 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
   size = 'medium'
 }) => {
   const [animationState, setAnimationState] = useState<ButtonAnimationState>('idle');
+  const [isSuccessTextVisible, setIsSuccessTextVisible] = useState(false);
 
   // Derived states from animation state
   const isInitialTextVisible = animationState === 'idle';
-  const isSuccessTextVisible = animationState === 'button-expanding';
   const isIconCentered = animationState === 'plane-centering' 
     || animationState === 'button-compressing' 
     || animationState === 'button-relaxing'
@@ -142,6 +161,8 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
   const isIconOnLeft = animationState === 'button-expanding' || animationState === 'idle';
 
   const handleClick = () => {
+    // Reset success text visibility
+    setIsSuccessTextVisible(false);
     // Step 1: Start text fading
     setAnimationState('text-fading');
     
@@ -164,6 +185,10 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
             // Step 6: After SVG swap completes (ICON_TRANSITION_DURATION), start button expanding
             setTimeout(() => {
               setAnimationState('button-expanding');
+              // Delay text fade-in until button has expanded a bit
+              setTimeout(() => {
+                setIsSuccessTextVisible(true);
+              }, TEXT_FADE_IN_DELAY);
             }, 300); // Using ICON_TRANSITION_DURATION
           }, BUTTON_RELAX_DURATION);
         }, BUTTON_COMPRESS_DURATION);
@@ -184,16 +209,12 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
         animationState={animationState}
         isOnLeft={isIconOnLeft}
       />
-      {isInitialTextVisible && (
-        <ButtonText $isVisible={isInitialTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
-          {children}
-        </ButtonText>
-      )}
-      {isSuccessTextVisible && (
-        <ButtonText $isVisible={isSuccessTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
-          flight booked
-        </ButtonText>
-      )}
+      <ButtonText $isVisible={isInitialTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
+        {children}
+      </ButtonText>
+      <SuccessText $isVisible={isSuccessTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
+        flight booked
+      </SuccessText>
     </StyledButton>
   );
 };
