@@ -13,7 +13,7 @@ const TodoFilter = ({ filter, onFilter, onClearCompleted }) => {
           All
         </button>
         <button 
-          className={`${filter === active ? "active" : ""}`} 
+          className={`${filter === "active" ? "active" : ""}`} 
           onClick={() => handleFilterChange("active")}
         >
           Active

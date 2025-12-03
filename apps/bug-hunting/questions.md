@@ -17,6 +17,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: The error was caught by the browser's runtime error handling, showing "Uncaught TypeError: Cannot read properties of null (reading 'map') at TodoList (TodoList.tsx:4:14)" in the console.
    - **How did you fix it?**: Changed the initial state in `App.tsx` from `useState(null)` to `useState([])`. This initializes `todos` as an empty array, which has the `map` method and prevents the error. An empty array is also the correct initial value for a list that will be populated with todo items.
 
+   **Bug #3: ReferenceError in TodoFilter.tsx**
+   - **What was the issue?**: On line 16 of `TodoFilter.tsx`, there was a `ReferenceError: active is not defined`. The code was comparing `filter === active` where `active` was referenced as a variable instead of the string literal `"active"`. JavaScript was trying to find a variable named `active` which doesn't exist in that scope.
+   - **How did you identify it?**: The error was caught by the browser's runtime error handling, showing "Uncaught ReferenceError: active is not defined at TodoFilter (TodoFilter.tsx:16:36)" in the console.
+   - **How did you fix it?**: Changed `filter === active` to `filter === "active"` by adding quotes around `active` to make it a string literal. This correctly compares the `filter` prop value to the string `"active"` instead of trying to reference an undefined variable.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?
