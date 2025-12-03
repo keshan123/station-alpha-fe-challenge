@@ -90,11 +90,23 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
   }
 `;
 
-export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; $isHoverAnimationPlaying?: boolean }>`
+export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number | 'auto'; $isHoverAnimationPlaying?: boolean; $hasIcon?: boolean }>`
   position: absolute;
-  left: ${props => props.$textLeft}px;
+  left: ${props => {
+    if (!props.$hasIcon) {
+      // When no icon, center the text
+      return '50%';
+    }
+    return typeof props.$textLeft === 'number' ? `${props.$textLeft}px` : 'auto';
+  }};
   top: 50%;
-  transform: translateY(-50%);
+  transform: ${props => {
+    if (!props.$hasIcon) {
+      // When no icon, center both horizontally and vertically
+      return 'translate(-50%, -50%)';
+    }
+    return 'translateY(-50%)';
+  }};
   white-space: nowrap;
   transition: opacity ${ANIMATION_TIMINGS.TEXT_FADE_OUT}ms ease-out;
   opacity: ${props => {
@@ -109,15 +121,28 @@ export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; 
   }
 `;
 
-export const SuccessText = styled.span<{ $isVisible: boolean; $textLeft: number }>`
+export const SuccessText = styled.span<{ $isVisible: boolean; $textLeft: number | 'auto'; $hasIcon?: boolean }>`
   position: absolute;
-  left: ${props => props.$isVisible ? `${props.$textLeft}px` : '50%'};
+  left: ${props => {
+    if (!props.$hasIcon) {
+      // When no icon, always center the text
+      return '50%';
+    }
+    // When icon is present, use the icon-based positioning
+    return props.$isVisible ? (typeof props.$textLeft === 'number' ? `${props.$textLeft}px` : 'auto') : '50%';
+  }};
   top: 50%;
-  transform: ${props => props.$isVisible ? 'translateY(-50%)' : 'translate(-50%, -50%)'};
+  transform: ${props => {
+    if (!props.$hasIcon) {
+      // When no icon, always center both horizontally and vertically
+      return 'translate(-50%, -50%)';
+    }
+    // When icon is present, use icon-based transform
+    return props.$isVisible ? 'translateY(-50%)' : 'translate(-50%, -50%)';
+  }};
   white-space: nowrap;
   transition: opacity ${ANIMATION_TIMINGS.TEXT_FADE_IN}ms ease-out,
-              left ${ANIMATION_TIMINGS.TEXT_FADE_IN}ms ease-out,
-              transform ${ANIMATION_TIMINGS.TEXT_FADE_IN}ms ease-out;
+              ${props => props.$hasIcon ? `left ${ANIMATION_TIMINGS.TEXT_FADE_IN}ms ease-out, transform ${ANIMATION_TIMINGS.TEXT_FADE_IN}ms ease-out` : 'none'};
   opacity: ${props => props.$isVisible ? 1 : 0};
   pointer-events: none;
   

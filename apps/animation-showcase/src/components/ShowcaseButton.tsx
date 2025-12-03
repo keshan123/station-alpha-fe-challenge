@@ -38,13 +38,15 @@ interface ShowcaseButtonProps {
   onClick?: () => void;
   isSuccess?: boolean;
   size?: ButtonSize;
+  showIcon?: boolean; // Optional prop to show/hide icon (defaults to true)
 }
 
 const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({ 
   children = 'Book a flight', 
   onClick, 
   isSuccess = false,
-  size = 'medium'
+  size = 'medium',
+  showIcon = true // Default to true for backward compatibility
 }) => {
   const [animationState, setAnimationState] = useState<ButtonAnimationState>('idle');
   const [isSuccessTextVisible, setIsSuccessTextVisible] = useState(false);
@@ -61,8 +63,8 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
   const isIconOnLeft = animationState === 'button-expanding' || animationState === 'idle';
 
   const handleMouseEnter = () => {
-    // Only trigger hover animation if button is idle and not already playing
-    if (animationState === 'idle' && !isHoverAnimationPlaying) {
+    // Only trigger hover animation if button is idle, not already playing, and icon is shown
+    if (animationState === 'idle' && !isHoverAnimationPlaying && showIcon) {
       setIsHovered(true);
       setIsHoverAnimationPlaying(true);
       
@@ -93,6 +95,24 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
     if (prefersReducedMotion) {
       setAnimationState('button-expanding');
       setIsSuccessTextVisible(true);
+      if (onClick) {
+        onClick();
+      }
+      return;
+    }
+
+    // If no icon, use simplified animation (just text fade)
+    if (!showIcon) {
+      setIsSuccessTextVisible(false);
+      setAnimationState('text-fading');
+      
+      setTimeout(() => {
+        setAnimationState('button-expanding');
+        setTimeout(() => {
+          setIsSuccessTextVisible(true);
+        }, ANIMATION_TIMINGS.TEXT_FADE_IN_DELAY);
+      }, ANIMATION_TIMINGS.TEXT_FADE_OUT);
+      
       if (onClick) {
         onClick();
       }
@@ -138,6 +158,9 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
     }
   };
 
+  // Calculate text position: if no icon, center the text or use padding
+  const textLeft = showIcon ? SIZE_CONFIG[size].textLeft : 'auto';
+
   return (
     <StyledButton 
       onClick={handleClick} 
@@ -146,22 +169,29 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <StatusIcon 
-        isSuccess={animationState === 'svg-swapping' || animationState === 'button-expanding' || isSuccess} 
-        size={size} 
-        isCentered={isIconCentered}
-        animationState={animationState}
-        isOnLeft={isIconOnLeft}
-        isHovered={isHovered && animationState === 'idle' && isHoverAnimationPlaying}
-      />
+      {showIcon && (
+        <StatusIcon 
+          isSuccess={animationState === 'svg-swapping' || animationState === 'button-expanding' || isSuccess} 
+          size={size} 
+          isCentered={isIconCentered}
+          animationState={animationState}
+          isOnLeft={isIconOnLeft}
+          isHovered={isHovered && animationState === 'idle' && isHoverAnimationPlaying}
+        />
+      )}
       <ButtonText 
         $isVisible={isInitialTextVisible} 
-        $textLeft={SIZE_CONFIG[size].textLeft}
+        $textLeft={textLeft}
         $isHoverAnimationPlaying={isHoverAnimationPlaying && animationState === 'idle'}
+        $hasIcon={showIcon}
       >
         {children}
       </ButtonText>
-      <SuccessText $isVisible={isSuccessTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
+      <SuccessText 
+        $isVisible={isSuccessTextVisible} 
+        $textLeft={textLeft}
+        $hasIcon={showIcon}
+      >
         Flight booked
       </SuccessText>
     </StyledButton>
