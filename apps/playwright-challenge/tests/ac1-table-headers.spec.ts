@@ -7,12 +7,10 @@ import { test, expect } from '@playwright/test';
  *   ID, Name, Username, Email, City, Phone, Website, and Company
  */
 test('AC1: Verify table headers display correctly', async ({ page }) => {
-  // Navigate to the app
-  await page.goto('http://localhost:3677');
-
-  // Mock API to return users (but with a deliberate error in the request URL)
+  // STEP 1: Set up the API route mock BEFORE navigation
+  // This is critical - the route must be set up before page.goto() so it can intercept
+  // the API call that happens when the page loads
   await page.route('https://jsonplaceholder.typicode.com/users', async (route) => {
-    // Notice the typo in 'usrs' above - this is a distractor that will cause the test to fail
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -44,11 +42,17 @@ test('AC1: Verify table headers display correctly', async ({ page }) => {
     });
   });
 
-  // Wait for the loading state to disappear
+  // STEP 2: Navigate to the application
+  // The route mock is already set up, so when the app loads and makes the API call,
+  // it will be intercepted by our mock
+  await page.goto('http://localhost:3677');
+
+  // STEP 3: Wait for the loading state to disappear
+  // This ensures the API call has completed and the data has been rendered
   await page.waitForSelector('[data-testid="loading-spinner"]', { state: 'hidden' });
 
-  // Attempt to verify table headers
-  // This list is incomplete - student will need to add the remaining headers
+  // STEP 4: Verify all table headers are displayed correctly
+  // The table should display all 8 required headers: ID, Name, Username, Email, City, Phone, Website, and Company
   const expectedHeaders = ['ID', 'Name', 'Username', 'Email', 'City', 'Phone', 'Website', 'Company'];
   
   for (const header of expectedHeaders) {
@@ -56,22 +60,4 @@ test('AC1: Verify table headers display correctly', async ({ page }) => {
       page.locator(`[data-testid="header-${header.toLowerCase()}"]`)
     ).toHaveText(header);
   }
-  
-  // TODO: Complete the test by adding assertions for the remaining headers
-  // (City, Phone, Website, and Company)
-});
-
-/* 
- * TASK FOR CANDIDATE:
- * 
- * This test has two issues:
- * 1. It's not mocking the correct API endpoint. There's a typo in the URL.
- * 2. It's not checking all the required table headers.
- *
- * The real API endpoint is: https://jsonplaceholder.typicode.com/users
- * 
- * You should:
- * 1. Fix the API endpoint in the route mock
- * 2. Complete the assertions for all required table headers
- * 3. Make sure the test passes by running: npx playwright test
- */ 
+}); 
