@@ -37,6 +37,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: This was identified through visual inspection - the input field showed "0" instead of the expected placeholder text when the component first rendered.
    - **How did you fix it?**: Changed `useState(0)` to `useState("")` on line 4. This initializes the input state as an empty string, which is the correct type for a text input. When the value is an empty string, React properly displays the placeholder text instead of showing a value.
 
+   **Bug #7: Missing id/name Attributes in TodoForm.tsx**
+   - **What was the issue?**: The input field in `TodoForm.tsx` was missing both `id` and `name` attributes. This is a best practice violation that can prevent browsers from correctly autofilling forms, and it also impacts accessibility and form handling. The `name` attribute is particularly important for form submission and browser autofill functionality.
+   - **How did you identify it?**: This was identified through a browser warning message: "A form field element has neither an id nor a name attribute. This might prevent the browser from correctly autofilling the form."
+   - **How did you fix it?**: Added both `name="todo"` and `id="todo-input"` attributes to the input element. The `name` attribute allows the browser to identify the field for autofill, and the `id` attribute provides a unique identifier for accessibility and potential label association.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?
