@@ -22,15 +22,23 @@ const SearchBar = ({ onSearch, searchHistory, addToSearchHistory }: SearchBarPro
     const fetchSuggestions = async () => {
       if (query.length < 2) {
         setSuggestions([]);
+        setShowSuggestions(false);
         return;
       }
 
       try {
         const results = await searchLocations(query);
         setSuggestions(results);
+        // Automatically show suggestions when they're fetched and there are results
+        if (results.length > 0) {
+          setShowSuggestions(true);
+        } else {
+          setShowSuggestions(false);
+        }
       } catch (error) {
         console.error('Error fetching suggestions:', error);
         setSuggestions([]);
+        setShowSuggestions(false);
       }
     };
 
