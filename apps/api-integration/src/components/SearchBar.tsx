@@ -16,31 +16,21 @@ const SearchBar = ({ onSearch, searchHistory, addToSearchHistory }: SearchBarPro
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (query.length < 3) {
+      if (query.length < 2) {
         setSuggestions([]);
         return;
       }
 
       try {
-        // TODO: Implement fetching location suggestions
-        // const results = await searchLocations(query);
-        // setSuggestions(results);
-        
-        // Placeholder suggestions for demonstration
-        setSuggestions([
-          { id: 1, name: 'London, UK' },
-          { id: 2, name: 'New York, US' },
-          { id: 3, name: 'Tokyo, Japan' },
-          { id: 4, name: 'Sydney, Australia' },
-          { id: 5, name: 'Paris, France' }
-        ].filter(item => item.name.toLowerCase().includes(query.toLowerCase())));
+        const results = await searchLocations(query);
+        setSuggestions(results);
       } catch (error) {
         console.error('Error fetching suggestions:', error);
         setSuggestions([]);
       }
     };
 
-    const debounceTimer = setTimeout(fetchSuggestions, 500);
+    const debounceTimer = setTimeout(fetchSuggestions, 300);
     return () => clearTimeout(debounceTimer);
   }, [query]);
 
@@ -59,13 +49,21 @@ const SearchBar = ({ onSearch, searchHistory, addToSearchHistory }: SearchBarPro
     onSearch(suggestion);
     addToSearchHistory(suggestion);
     setShowSuggestions(false);
+    setShowHistory(false);
   };
 
   const handleHistoryClick = (historyItem: string) => {
     setQuery(historyItem);
     onSearch(historyItem);
+    setShowSuggestions(false);
     setShowHistory(false);
   };
+
+  // Determine if we should show the dropdown
+  const hasSuggestions = query.length >= 2 && suggestions.length > 0;
+  const shouldShowHistoryOnly = query.length < 2 && searchHistory.length > 0;
+  const shouldShowHistoryBelow = hasSuggestions && showHistory && searchHistory.length > 0;
+  const showDropdown = (showSuggestions || showHistory) && (hasSuggestions || shouldShowHistoryOnly);
 
   return (
     <div className="search-bar-container">
@@ -77,7 +75,14 @@ const SearchBar = ({ onSearch, searchHistory, addToSearchHistory }: SearchBarPro
             onChange={(e) => setQuery(e.target.value)}
             onFocus={() => {
               setShowSuggestions(true);
-              setShowHistory(searchHistory.length > 0);
+              setShowHistory(true);
+            }}
+            onBlur={() => {
+              // Delay hiding to allow clicks on dropdown items
+              setTimeout(() => {
+                setShowSuggestions(false);
+                setShowHistory(false);
+              }, 200);
             }}
             placeholder="Search for a city or zip code..."
             className="search-input"
@@ -87,36 +92,41 @@ const SearchBar = ({ onSearch, searchHistory, addToSearchHistory }: SearchBarPro
           </button>
         </div>
 
-        {/* Suggestions dropdown */}
-        {showSuggestions && suggestions.length > 0 && (
-          <ul className="suggestions-list">
-            {suggestions.map((suggestion) => (
-              <li
-                key={suggestion.id}
-                onClick={() => handleSuggestionClick(suggestion.name)}
-                className="suggestion-item"
-              >
-                {suggestion.name}
-              </li>
-            ))}
-          </ul>
-        )}
+        {/* Combined dropdown with suggestions and recent searches */}
+        {showDropdown && (
+          <div className="search-dropdown">
+            {/* Suggestions section - shown when query has 2+ characters */}
+            {hasSuggestions && (
+              <ul className="suggestions-list">
+                {suggestions.map((suggestion) => (
+                  <li
+                    key={suggestion.id || suggestion.name}
+                    onClick={() => handleSuggestionClick(suggestion.name)}
+                    className="suggestion-item"
+                  >
+                    {suggestion.name}
+                  </li>
+                ))}
+              </ul>
+            )}
 
-        {/* Search history dropdown */}
-        {showHistory && searchHistory.length > 0 && (
-          <div className="search-history">
-            <h4>Recent Searches</h4>
-            <ul className="history-list">
-              {searchHistory.map((item, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleHistoryClick(item.query)}
-                  className="history-item"
-                >
-                  {item.query}
-                </li>
-              ))}
-            </ul>
+            {/* Recent searches section - shown when query is short OR below suggestions */}
+            {(shouldShowHistoryOnly || shouldShowHistoryBelow) && (
+              <div className="search-history-section">
+                <h4 className="search-history-header">Recent Searches</h4>
+                <ul className="history-list">
+                  {searchHistory.map((item, index) => (
+                    <li
+                      key={index}
+                      onClick={() => handleHistoryClick(item.query)}
+                      className="history-item"
+                    >
+                      {item.query}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </form>

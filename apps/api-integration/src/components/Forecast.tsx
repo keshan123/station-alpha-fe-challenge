@@ -21,6 +21,11 @@ const Forecast = ({ weatherData }: ForecastProps) => {
     return date.toLocaleDateString('en-US', { weekday: 'short' });
   };
 
+  // Ensure icon URL has protocol (WeatherAPI.com may return protocol-relative URLs)
+  const getIconUrl = (icon: string) => {
+    return icon?.startsWith('//') ? `https:${icon}` : icon;
+  };
+
   return (
     <div className="forecast-container">
       <h3>5-Day Forecast</h3>
@@ -30,7 +35,7 @@ const Forecast = ({ weatherData }: ForecastProps) => {
           <div key={index} className="forecast-day">
             <h4>{formatDate(day.date)}</h4>
             <img 
-              src={day.day.condition.icon} 
+              src={getIconUrl(day.day.condition.icon)} 
               alt={day.day.condition.text} 
               className="forecast-icon" 
             />

@@ -7,6 +7,11 @@ interface CurrentWeatherProps {
 const CurrentWeather = ({ weatherData }: CurrentWeatherProps) => {
   const { location, current } = weatherData;
 
+  // Ensure icon URL has protocol (WeatherAPI.com may return protocol-relative URLs)
+  const iconUrl = current.condition.icon?.startsWith('//') 
+    ? `https:${current.condition.icon}` 
+    : current.condition.icon;
+
   return (
     <div className="current-weather-container">
       <div className="location-info">
@@ -16,7 +21,7 @@ const CurrentWeather = ({ weatherData }: CurrentWeatherProps) => {
 
       <div className="weather-main">
         <img 
-          src={current.condition.icon} 
+          src={iconUrl} 
           alt={current.condition.text} 
           className="weather-icon" 
         />

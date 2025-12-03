@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
+import SearchBar from './components/SearchBar'
+import CurrentWeather from './components/CurrentWeather'
+import { getCurrentWeather, getWeatherForecast } from './services/weatherApi'
 
 // Types for weather data
 export interface WeatherData {
@@ -64,10 +67,71 @@ function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   // Error state
   const [error, setError] = useState<string | null>(null);
-  // Search query state
-  const [searchQuery, setSearchQuery] = useState<string>('');
   // Search history
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+
+  // Load search history from localStorage on mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem('weatherSearchHistory');
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory);
+        setSearchHistory(parsed);
+      } catch (e) {
+        console.error('Error loading search history:', e);
+      }
+    }
+  }, []);
+
+  // Save search history to localStorage whenever it changes
+  useEffect(() => {
+    if (searchHistory.length > 0) {
+      localStorage.setItem('weatherSearchHistory', JSON.stringify(searchHistory));
+    }
+  }, [searchHistory]);
+
+  // Handle search for weather data
+  const handleSearch = async (location: string) => {
+    if (!location.trim()) {
+      setError('Please enter a location');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Fetch both current weather and 5-day forecast
+      const forecastData = await getWeatherForecast(location, 5);
+      setWeatherData(forecastData);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch weather data';
+      setError(errorMessage);
+      setWeatherData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add search to history
+  const addToSearchHistory = (query: string) => {
+    const newItem: SearchHistoryItem = {
+      query: query.trim(),
+      timestamp: Date.now()
+    };
+
+    setSearchHistory((prev) => {
+      // Remove duplicates and keep only last 10 searches
+      const filtered = prev.filter(item => item.query.toLowerCase() !== query.toLowerCase());
+      return [newItem, ...filtered].slice(0, 10);
+    });
+  };
+
+  // Handle location selection from map
+  const handleLocationSelect = async (lat: number, lon: number) => {
+    const location = `${lat},${lon}`;
+    await handleSearch(location);
+  };
   
   return (
     <div className="weather-app">
@@ -123,54 +187,35 @@ function App() {
         <section className="implementation-area">
           <h2>Your Implementation</h2>
           
-          {/* Search Component Placeholder */}
-          <div className="search-container">
-            <input 
-              type="text" 
-              placeholder="Search for a city..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <button>Search</button>
-          </div>
+          {/* Search Component */}
+          <SearchBar 
+            onSearch={handleSearch}
+            searchHistory={searchHistory}
+            addToSearchHistory={addToSearchHistory}
+          />
 
-          {/* Weather Display Placeholders */}
+          {/* Weather Display */}
           <div className="weather-display">
             {isLoading && <div className="loading">Loading weather data...</div>}
             
-            {error && <div className="error-message">{error}</div>}
-            
-            {!isLoading && !error && !weatherData && (
-              <div className="no-data">
-                Search for a location to see weather information
+            {error && (
+              <div className="error-message">
+                <p>Error: {error}</p>
+                <p>Please try searching for a different location.</p>
               </div>
             )}
             
-            {weatherData && (
+            {!isLoading && !error && !weatherData && (
+              <div className="no-data">
+                <p>Search for a location to see weather information</p>
+                <p className="hint">Try searching for a city name, zip code, or coordinates</p>
+              </div>
+            )}
+            
+            {weatherData && !isLoading && (
               <div className="weather-content">
-                {/* Current Weather Placeholder */}
-                <div className="current-weather">
-                  <h3>Current Weather Placeholder</h3>
-                  <p>Implement the current weather display here</p>
-                </div>
-                
-                {/* Forecast Placeholder */}
-                <div className="forecast">
-                  <h3>Forecast Placeholder</h3>
-                  <p>Implement the 5-day forecast here</p>
-                </div>
-                
-                {/* Weather Map Placeholder */}
-                <div className="weather-map">
-                  <h3>Weather Map Placeholder</h3>
-                  <p>Implement the weather map here</p>
-                </div>
-                
-                {/* Alerts Placeholder */}
-                <div className="weather-alerts">
-                  <h3>Weather Alerts Placeholder</h3>
-                  <p>Implement weather alerts here</p>
-                </div>
+                {/* Current Weather */}
+                <CurrentWeather weatherData={weatherData} />
               </div>
             )}
           </div>
