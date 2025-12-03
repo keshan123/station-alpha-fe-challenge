@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import './App.css'
 import SearchBar from './components/SearchBar'
 import CurrentWeather from './components/CurrentWeather'
 import Forecast from './components/Forecast'
+import WeatherMap from './components/WeatherMap'
 import { getCurrentWeather, getWeatherForecast, WeatherAPIError } from './services/weatherApi'
 
 // Types for weather data
@@ -91,8 +92,8 @@ function App() {
     }
   }, [searchHistory]);
 
-  // Handle search for weather data
-  const handleSearch = async (location: string) => {
+  // Handle search for weather data - memoized with useCallback
+  const handleSearch = useCallback(async (location: string) => {
     if (!location.trim()) {
       setError('Please enter a location');
       return;
@@ -118,27 +119,27 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  // Add search to history
-  const addToSearchHistory = (query: string) => {
-    const newItem: SearchHistoryItem = {
-      query: query.trim(),
-      timestamp: Date.now()
-    };
-
+  // Add search to history - memoized with useCallback
+  const addToSearchHistory = useCallback((query: string) => {
     setSearchHistory((prev) => {
+      const trimmedQuery = query.trim();
+      const newItem: SearchHistoryItem = {
+        query: trimmedQuery,
+        timestamp: Date.now()
+      };
       // Remove duplicates and keep only last 10 searches
-      const filtered = prev.filter(item => item.query.toLowerCase() !== query.toLowerCase());
+      const filtered = prev.filter(item => item.query.toLowerCase() !== trimmedQuery.toLowerCase());
       return [newItem, ...filtered].slice(0, 10);
     });
-  };
+  }, []);
 
-  // Handle location selection from map
-  const handleLocationSelect = async (lat: number, lon: number) => {
+  // Handle location selection from map - memoized with useCallback
+  const handleLocationSelect = useCallback(async (lat: number, lon: number) => {
     const location = `${lat},${lon}`;
     await handleSearch(location);
-  };
+  }, [handleSearch]);
   
   return (
     <div className="weather-app">
@@ -182,6 +183,12 @@ function App() {
               
               {/* Extended Forecast */}
               <Forecast weatherData={weatherData} />
+              
+              {/* Weather Map */}
+              <WeatherMap 
+                weatherData={weatherData} 
+                onLocationSelect={handleLocationSelect}
+              />
             </div>
           )}
         </div>

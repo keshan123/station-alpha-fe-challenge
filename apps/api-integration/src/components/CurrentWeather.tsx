@@ -1,10 +1,11 @@
+import { memo } from 'react';
 import { WeatherData } from '../App';
 
 interface CurrentWeatherProps {
   weatherData: WeatherData;
 }
 
-const CurrentWeather = ({ weatherData }: CurrentWeatherProps) => {
+const CurrentWeather = memo(({ weatherData }: CurrentWeatherProps) => {
   const { location, current } = weatherData;
 
   // Ensure icon URL has protocol (WeatherAPI.com may return protocol-relative URLs)
@@ -52,10 +53,12 @@ const CurrentWeather = ({ weatherData }: CurrentWeatherProps) => {
       </div>
 
       <div className="last-updated">
-        <p>Last updated: {new Date().toLocaleTimeString()}</p>
+        <p>Last updated: Just now</p>
       </div>
     </div>
   );
-};
+});
+
+CurrentWeather.displayName = 'CurrentWeather';
 
 export default CurrentWeather; 

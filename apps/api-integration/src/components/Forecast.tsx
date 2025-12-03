@@ -1,10 +1,11 @@
+import { memo, useMemo } from 'react';
 import { WeatherData } from '../App';
 
 interface ForecastProps {
   weatherData: WeatherData;
 }
 
-const Forecast = ({ weatherData }: ForecastProps) => {
+const Forecast = memo(({ weatherData }: ForecastProps) => {
   // Check if forecast data exists
   if (!weatherData.forecast || !weatherData.forecast.forecastday) {
     return (
@@ -15,16 +16,16 @@ const Forecast = ({ weatherData }: ForecastProps) => {
     );
   }
 
-  // Format date to show day of week
-  const formatDate = (dateStr: string) => {
+  // Format date to show day of week - memoized
+  const formatDate = useMemo(() => (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleDateString('en-US', { weekday: 'short' });
-  };
+  }, []);
 
-  // Ensure icon URL has protocol (WeatherAPI.com may return protocol-relative URLs)
-  const getIconUrl = (icon: string) => {
+  // Ensure icon URL has protocol (WeatherAPI.com may return protocol-relative URLs) - memoized
+  const getIconUrl = useMemo(() => (icon: string) => {
     return icon?.startsWith('//') ? `https:${icon}` : icon;
-  };
+  }, []);
 
   return (
     <div className="forecast-container">
@@ -53,6 +54,8 @@ const Forecast = ({ weatherData }: ForecastProps) => {
       </div>
     </div>
   );
-};
+});
+
+Forecast.displayName = 'Forecast';
 
 export default Forecast; 

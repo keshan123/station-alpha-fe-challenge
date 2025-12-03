@@ -1,6 +1,6 @@
 import { WeatherData } from '../App';
 
-// TODO: Replace with your actual API key
+// WeatherAPI.com API key
 const API_KEY = '3a1a08277b2d41e3902203846250212';
 
 // Base URL for Weather API (WeatherAPI.com used as an example)
@@ -357,22 +357,95 @@ const transformWeatherData = (data: any): WeatherData => {
 };
 
 /**
- * Get map URL for a location
+ * Convert lat/lon to tile coordinates
+ */
+export const deg2num = (lat: number, lon: number, zoom: number): { x: number; y: number } => {
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lon + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n);
+  return { x, y };
+};
+
+/**
+ * Convert lat/lon to pixel coordinates at a given zoom level
+ * Returns world pixel coordinates (absolute position in the entire map at this zoom level)
+ */
+export const latLonToPixel = (lat: number, lon: number, zoom: number): { x: number; y: number } => {
+  const n = Math.pow(2, zoom);
+  const tileSize = 256;
+  
+  // Convert lat/lon to world coordinates (0-1 range)
+  const worldX = (lon + 180) / 360;
+  const latRad = lat * Math.PI / 180;
+  const worldY = (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2;
+  
+  // Convert to pixel coordinates (world pixel coordinates)
+  const pixelX = worldX * n * tileSize;
+  const pixelY = worldY * n * tileSize;
+  
+  return { x: pixelX, y: pixelY };
+};
+
+/**
+ * Convert pixel coordinates to lat/lon - improved accuracy
+ */
+export const pixelToLatLon = (
+  pixelX: number,
+  pixelY: number,
+  mapWidth: number,
+  mapHeight: number,
+  centerLat: number,
+  centerLon: number,
+  zoom: number
+): { lat: number; lon: number } => {
+  const tileSize = 256;
+  const n = Math.pow(2, zoom);
+  
+  // Get the pixel coordinates of the center point
+  const centerPixel = latLonToPixel(centerLat, centerLon, zoom);
+  
+  // Calculate the pixel coordinates of the center of the map container
+  const containerCenterX = mapWidth / 2;
+  const containerCenterY = mapHeight / 2;
+  
+  // Calculate the offset from the container center to the clicked point
+  const offsetX = pixelX - containerCenterX;
+  const offsetY = pixelY - containerCenterY;
+  
+  // Calculate the world pixel coordinates of the clicked point
+  const clickedPixelX = centerPixel.x + offsetX;
+  const clickedPixelY = centerPixel.y + offsetY;
+  
+  // Convert world pixel coordinates back to world coordinates (0-1 range)
+  const worldX = clickedPixelX / (n * tileSize);
+  const worldY = clickedPixelY / (n * tileSize);
+  
+  // Convert world coordinates to lat/lon
+  const lon = worldX * 360 - 180;
+  const latRad = Math.atan(Math.sinh(Math.PI * (1 - 2 * worldY)));
+  const lat = latRad * 180 / Math.PI;
+  
+  return { lat, lon };
+};
+
+/**
+ * Get OpenStreetMap tile URL (base map)
+ */
+export const getMapTileUrl = (x: number, y: number, zoom: number): string => {
+  // Using OpenStreetMap tiles (free, no API key required)
+  return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+};
+
+/**
+ * Get map URL for a location (returns center coordinates for map display)
  * @param lat - Latitude
  * @param lon - Longitude
  * @param zoom - Zoom level (1-18)
- * @param type - Map type (e.g., 'precipitation', 'temp', 'wind')
- * @returns Map URL string
+ * @returns Object with map configuration
  */
-export const getWeatherMapUrl = (lat: number, lon: number, zoom: number = 10, type: string = 'precipitation'): string => {
-  // TODO: Implement weather map URL generation
-  // This will depend on the specific mapping service you choose
-  
-  // Example placeholder implementation using OpenWeatherMap (you'll need a separate API key):
-  // return `https://tile.openweathermap.org/map/${type}/${zoom}/${lat}/${lon}.png?appid=${API_KEY}`;
-  
-  // For now, return a placeholder:
-  return `https://placekitten.com/500/300?lat=${lat}&lon=${lon}&zoom=${zoom}&type=${type}`;
+export const getWeatherMapUrl = (lat: number, lon: number, zoom: number = 10): { lat: number; lon: number; zoom: number } => {
+  return { lat, lon, zoom };
 };
 
 /**
