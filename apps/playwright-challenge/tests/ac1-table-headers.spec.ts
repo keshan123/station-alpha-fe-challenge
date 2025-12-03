@@ -11,7 +11,7 @@ test('AC1: Verify table headers display correctly', async ({ page }) => {
   await page.goto('http://localhost:3677');
 
   // Mock API to return users (but with a deliberate error in the request URL)
-  await page.route('https://jsonplaceholder.typicode.com/usrs', async (route) => {
+  await page.route('https://jsonplaceholder.typicode.com/users', async (route) => {
     // Notice the typo in 'usrs' above - this is a distractor that will cause the test to fail
     await route.fulfill({
       status: 200,
@@ -49,7 +49,7 @@ test('AC1: Verify table headers display correctly', async ({ page }) => {
 
   // Attempt to verify table headers
   // This list is incomplete - student will need to add the remaining headers
-  const expectedHeaders = ['ID', 'Name', 'User-name', 'Email'];
+  const expectedHeaders = ['ID', 'Name', 'Username', 'Email', 'City', 'Phone', 'Website', 'Company'];
   
   for (const header of expectedHeaders) {
     await expect(
