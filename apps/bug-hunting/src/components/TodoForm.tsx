@@ -12,7 +12,7 @@ const TodoForm = ({ onAdd }) => {
       <input
         type="text"
         value={input}
-        onChange={setInput(e.target.value)}
+        onChange={(e) => setInput(e.target.value)}
         placeholder="Add a new todo"
       />
       <button type="submit">Add Todo</button>
