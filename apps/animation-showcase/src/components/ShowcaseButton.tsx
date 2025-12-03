@@ -49,6 +49,7 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
   const [animationState, setAnimationState] = useState<ButtonAnimationState>('idle');
   const [isSuccessTextVisible, setIsSuccessTextVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isHoverAnimationPlaying, setIsHoverAnimationPlaying] = useState(false);
   const prefersReducedMotion = useReducedMotion();
 
   // Derived states from animation state
@@ -57,21 +58,30 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
     || animationState === 'button-compressing' 
     || animationState === 'button-relaxing'
     || animationState === 'svg-swapping';
-  const isIconOnLeft = animationState === 'button-expanding' || (animationState === 'idle' && !isHovered);
+  const isIconOnLeft = animationState === 'button-expanding' || animationState === 'idle';
+
+  const handleMouseEnter = () => {
+    // Only trigger hover animation if button is idle and not already playing
+    if (animationState === 'idle' && !isHoverAnimationPlaying) {
+      setIsHovered(true);
+      setIsHoverAnimationPlaying(true);
+      
+      // Reset hover animation state after animation completes (1.5s)
+      setTimeout(() => {
+        setIsHoverAnimationPlaying(false);
+        // If mouse is still hovering, keep isHovered true, otherwise it will be reset on mouse leave
+      }, 1500);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    setIsHoverAnimationPlaying(false);
+  };
 
   const handleClick = () => {
     // Prevent clicks if animation is already in progress or completed
     if (animationState !== 'idle') {
-      return;
-    }
-
-    // If hovering, reset hover state first to show text, then start animation
-    if (isHovered) {
-      setIsHovered(false);
-      // Small delay to let text become fully visible before starting fade
-      setTimeout(() => {
-        startClickAnimation();
-      }, 50);
       return;
     }
 
@@ -133,8 +143,8 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
       onClick={handleClick} 
       $size={size} 
       $animationState={animationState}
-      onMouseEnter={() => animationState === 'idle' && setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <StatusIcon 
         isSuccess={animationState === 'svg-swapping' || animationState === 'button-expanding' || isSuccess} 
@@ -142,12 +152,12 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
         isCentered={isIconCentered}
         animationState={animationState}
         isOnLeft={isIconOnLeft}
-        isHovered={isHovered && animationState === 'idle'}
+        isHovered={isHovered && animationState === 'idle' && isHoverAnimationPlaying}
       />
       <ButtonText 
         $isVisible={isInitialTextVisible} 
         $textLeft={SIZE_CONFIG[size].textLeft}
-        $isHovered={isHovered && animationState === 'idle'}
+        $isHoverAnimationPlaying={isHoverAnimationPlaying && animationState === 'idle'}
       >
         {children}
       </ButtonText>

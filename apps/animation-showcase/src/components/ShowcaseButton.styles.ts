@@ -46,8 +46,7 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease,
-              width ${props => {
+  transition: width ${props => {
                 if (props.$animationState === 'button-compressing') {
                   return `${ANIMATION_TIMINGS.BUTTON_COMPRESS}ms`;
                 }
@@ -73,17 +72,13 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
               }} cubic-bezier(0.4, 0, 0.2, 1);
   
   @media (prefers-reduced-motion: reduce) {
-    transition: background-color 0.2s ease, width 0.01ms, min-width 0.01ms;
+    transition: width 0.01ms, min-width 0.01ms;
   }
 
   /* Show default outline for keyboard navigation (accessibility) */
   &:focus-visible {
     outline: 2px solid #196BFF;
     outline-offset: 2px;
-  }
-
-  &:hover {
-    background-color: ${props => props.$animationState === 'idle' ? '#0056b3' : '#196BFF'};
   }
 
   &:active {
@@ -95,7 +90,7 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
   }
 `;
 
-export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; $isHovered?: boolean }>`
+export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; $isHoverAnimationPlaying?: boolean }>`
   position: absolute;
   left: ${props => props.$textLeft}px;
   top: 50%;
@@ -104,8 +99,8 @@ export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; 
   transition: opacity ${ANIMATION_TIMINGS.TEXT_FADE_OUT}ms ease-out;
   opacity: ${props => {
     if (!props.$isVisible) return 0;
-    // On hover, keep text visible but slightly dimmed
-    return props.$isHovered ? 0.7 : 1;
+    // During hover animation, reduce opacity to 70%
+    return props.$isHoverAnimationPlaying ? 0.7 : 1;
   }};
   pointer-events: none;
   

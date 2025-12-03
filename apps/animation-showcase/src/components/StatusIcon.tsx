@@ -17,10 +17,11 @@ const TICK_PATH = "M1578 1287 c-20 -9 -526 -501 -994 -966 -3 -3 -91 81 -197 186 
 
 const StatusIcon: React.FC<StatusIconProps> = ({ isSuccess, size, isCentered = false, animationState, isOnLeft = false, isHovered = false }) => {
   const iconSize = SIZE_CONFIG[size].iconSize;
+  const buttonHeight = SIZE_CONFIG[size].height;
   const isSwapping = animationState === 'svg-swapping';
   const showTick = isSwapping || isSuccess;
   // Icon should be on left during expanding phase, otherwise use isCentered logic
-  // During hover, don't center it - let the animation handle positioning
+  // During hover animation, don't use centered logic - let the animation handle positioning
   const shouldBeCentered = isHovered ? false : (isOnLeft ? false : isCentered);
   
   return (
@@ -28,6 +29,8 @@ const StatusIcon: React.FC<StatusIconProps> = ({ isSuccess, size, isCentered = f
       $iconSize={iconSize} 
       $isCentered={shouldBeCentered} 
       $iconLeft={SIZE_CONFIG[size].iconLeft}
+      $animationState={animationState}
+      $buttonHeight={buttonHeight}
       $isHovered={isHovered}
     >
       {/* Plane Icon - shown when not swapping and isSuccess is false */}
