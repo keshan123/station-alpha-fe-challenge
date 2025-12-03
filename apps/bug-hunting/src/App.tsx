@@ -15,16 +15,15 @@ const App = () => {
   
   const toggleTodo = (id) => {
     const updatedTodos = todos.map(todo => {
-      if (todo.id == id) {
-        todo.completed = !todo.completed
-        return todo
+      if (todo.id === id) {
+        return { ...todo, completed: !todo.completed }
       }
       return todo
     })
     setTodos(updatedTodos)
   }
   
-  const deleteTodo = () => {
+  const deleteTodo = (id) => {
     const remainingTodos = todos.filter(todo => {
       return todo.id !== id
     })
