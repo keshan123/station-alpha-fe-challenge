@@ -8,10 +8,10 @@ export const ANIMATION_TIMINGS = {
   TEXT_FADE_OUT: 400,        // Duration for initial text to fade out
 
   // Phase 2: Plane icon moves to center
-  ICON_CENTER: 500,          // Duration for plane icon to move to center
+  ICON_CENTER: 250,          // Duration for plane icon to move to center
 
   // Phase 3: Button compresses
-  BUTTON_COMPRESS: 200,      // Duration for button to compress to 58px
+  BUTTON_COMPRESS: 250,      // Duration for button to compress to 58px
 
   // Phase 4: Button relaxes
   BUTTON_RELAX: 1000,         // Duration for button to relax to 68px

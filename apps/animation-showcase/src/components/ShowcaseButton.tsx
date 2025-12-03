@@ -88,7 +88,7 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
         {children}
       </ButtonText>
       <SuccessText $isVisible={isSuccessTextVisible} $textLeft={SIZE_CONFIG[size].textLeft}>
-        flight booked
+        Flight booked
       </SuccessText>
     </StyledButton>
   );
