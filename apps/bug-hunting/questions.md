@@ -32,6 +32,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: The error was caught by React's development mode warnings, showing "Received `false` for a non-boolean attribute `className`" in the console. React suggested using a ternary operator instead of the `&&` pattern for conditional className values.
    - **How did you fix it?**: Changed `className={filter === "all" && "active"}` to `className={filter === "all" ? "active" : ""}`. This uses a ternary operator that always returns a string (either `"active"` or an empty string `""`), ensuring className always receives a valid string value instead of a boolean.
 
+   **Bug #6: Input Placeholder Showing "0" in TodoForm.tsx**
+   - **What was the issue?**: The input field in `TodoForm.tsx` was displaying "0" instead of showing the placeholder text "Add a new todo". This happened because on line 4, the input state was initialized with `useState(0)` (a number) instead of an empty string. When a controlled input has a non-empty value (even if it's the number 0), React displays that value and the placeholder is hidden.
+   - **How did you identify it?**: This was identified through visual inspection - the input field showed "0" instead of the expected placeholder text when the component first rendered.
+   - **How did you fix it?**: Changed `useState(0)` to `useState("")` on line 4. This initializes the input state as an empty string, which is the correct type for a text input. When the value is an empty string, React properly displays the placeholder text instead of showing a value.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?

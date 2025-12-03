@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const TodoForm = ({ onAdd }) => {
-  const [input, setInput] = useState(0)
+  const [input, setInput] = useState("")
 
   const handleSubmit = (e) => {
     onAdd(input)
