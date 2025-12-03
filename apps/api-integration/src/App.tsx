@@ -4,6 +4,7 @@ import SearchBar from './components/SearchBar'
 import CurrentWeather from './components/CurrentWeather'
 import Forecast from './components/Forecast'
 import WeatherMap from './components/WeatherMap'
+import WeatherAlerts from './components/WeatherAlerts'
 import { getCurrentWeather, getWeatherForecast, WeatherAPIError } from './services/weatherApi'
 
 // Types for weather data
@@ -180,6 +181,9 @@ function App() {
             <div className="weather-content">
               {/* Current Weather */}
               <CurrentWeather weatherData={weatherData} />
+              
+              {/* Weather Alerts */}
+              <WeatherAlerts weatherData={weatherData} />
               
               {/* Extended Forecast */}
               <Forecast weatherData={weatherData} />

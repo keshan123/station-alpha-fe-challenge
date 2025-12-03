@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { WeatherData } from '../App';
-import { getMapTileUrl, pixelToLatLon, deg2num, latLonToPixel } from '../services/weatherApi';
+import { getMapTileUrl, getWeatherbitMapTileUrl, pixelToLatLon, deg2num, latLonToPixel } from '../services/weatherApi';
 
 interface WeatherMapProps {
   weatherData: WeatherData;
@@ -12,6 +12,8 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
   const [mapType, setMapType] = useState<'base' | 'precipitation' | 'temp' | 'wind'>('base');
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [tiles, setTiles] = useState<Array<{ x: number; y: number; url: string }>>([]);
+  const [overlayTiles, setOverlayTiles] = useState<Array<{ x: number; y: number; url: string }>>([]);
+  const [overlayError, setOverlayError] = useState<string | null>(null);
   const [mapCenter, setMapCenter] = useState({ lat: weatherData.location.lat, lon: weatherData.location.lon });
   
   // Get coordinates from weatherData
@@ -57,7 +59,35 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
     }
     
     setTiles(newTiles);
-  }, [mapCenter, zoom]);
+    
+    // Generate weather overlay tiles from Weatherbit.io if a weather overlay is selected
+    if (mapType !== 'base') {
+      const newOverlayTiles: Array<{ x: number; y: number; url: string }> = [];
+      for (let y = 0; y < tilesY; y++) {
+        for (let x = 0; x < tilesX; x++) {
+          const tileX = startX + x;
+          const tileY = startY + y;
+          const overlayUrl = getWeatherbitMapTileUrl(
+            tileX,
+            tileY,
+            zoom,
+            mapType as 'precipitation' | 'temp' | 'wind'
+          );
+          newOverlayTiles.push({
+            x: tileX,
+            y: tileY,
+            url: overlayUrl
+          });
+        }
+      }
+      setOverlayTiles(newOverlayTiles);
+      setOverlayError(null); // Clear any previous errors when switching map types
+      console.log(`Loading ${mapType} overlay tiles:`, newOverlayTiles.length, 'tiles');
+    } else {
+      setOverlayTiles([]);
+      setOverlayError(null);
+    }
+  }, [mapCenter, zoom, mapType]);
   
   const handleMapClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!mapContainerRef.current) return;
@@ -112,79 +142,6 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
       top: `calc(50% + ${offsetY}px)`
     };
   }, [mapCenter, zoom]);
-
-  // Helper functions to get color based on weather data
-  const getPrecipitationColor = useCallback((chanceOfRain: number): string => {
-    if (chanceOfRain < 30) return 'rgba(224, 242, 254, 0.6)'; // Light blue
-    if (chanceOfRain < 60) return 'rgba(2, 132, 199, 0.7)'; // Medium blue
-    return 'rgba(12, 74, 110, 0.8)'; // Dark blue
-  }, []);
-
-  const getTemperatureColor = useCallback((temp: number): string => {
-    if (temp < 0) return 'rgba(14, 165, 233, 0.7)'; // Cold blue
-    if (temp < 15) return 'rgba(59, 130, 246, 0.7)'; // Cool blue
-    if (temp < 25) return 'rgba(251, 191, 36, 0.7)'; // Warm yellow
-    return 'rgba(239, 68, 68, 0.7)'; // Hot red
-  }, []);
-
-  const getWindColor = useCallback((windSpeed: number): string => {
-    if (windSpeed < 10) return 'rgba(243, 244, 246, 0.6)'; // Calm gray
-    if (windSpeed < 25) return 'rgba(96, 165, 250, 0.7)'; // Moderate blue
-    return 'rgba(30, 64, 175, 0.8)'; // Strong dark blue
-  }, []);
-
-  // Generate weather markers based on forecast data
-  const getWeatherMarkers = useCallback(() => {
-    if (mapType === 'base' || !weatherData.forecast) return [];
-
-    const markers: Array<{ lat: number; lon: number; color: string; size: number; value: number; label: string }> = [];
-    const forecastDays = weatherData.forecast.forecastday.slice(0, 5);
-
-    // Create markers in a circular pattern around the center
-    forecastDays.forEach((day, index) => {
-      const angle = (index / forecastDays.length) * 2 * Math.PI;
-      const radius = 0.05; // ~5km radius
-      
-      // Calculate offset lat/lon
-      const latOffset = radius * Math.cos(angle);
-      const lonOffset = radius * Math.sin(angle) / Math.cos(mapCenter.lat * Math.PI / 180);
-      
-      const markerLat = mapCenter.lat + latOffset;
-      const markerLon = mapCenter.lon + lonOffset;
-
-      let color = '';
-      let value = 0;
-      let label = '';
-
-      if (mapType === 'precipitation') {
-        value = day.day.daily_chance_of_rain;
-        color = getPrecipitationColor(value);
-        label = `${value}%`;
-      } else if (mapType === 'temp') {
-        value = (day.day.maxtemp_c + day.day.mintemp_c) / 2;
-        color = getTemperatureColor(value);
-        label = `${Math.round(value)}°C`;
-      } else if (mapType === 'wind') {
-        // Use current wind speed for all markers (forecast doesn't include daily wind)
-        value = weatherData.current.wind_kph;
-        color = getWindColor(value);
-        label = `${Math.round(value)} km/h`;
-      }
-
-      markers.push({
-        lat: markerLat,
-        lon: markerLon,
-        color,
-        size: 40 + (value / 100) * 40, // Size based on intensity
-        value,
-        label
-      });
-    });
-
-    return markers;
-  }, [mapType, weatherData.forecast, mapCenter, getPrecipitationColor, getTemperatureColor, getWindColor]);
-
-  const weatherMarkers = getWeatherMarkers();
   
   return (
     <div className="weather-map-container">
@@ -248,13 +205,14 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
           {mapType === 'precipitation' && (
             <div className="legend-content">
               <div className="legend-item">
-                <div className="legend-color" style={{ background: 'linear-gradient(to right, #e0f2fe, #0284c7, #0c4a6e)' }}></div>
-                <span>Precipitation Intensity (mm/h)</span>
+                <div className="legend-color" style={{ background: 'linear-gradient(to right, #a7f3d0, #10b981, #047857, #064e3b)' }}></div>
+                <span>Precipitation Intensity (Categorical: Rain, Freezing Rain/Sleet, Snow)</span>
               </div>
               <div className="legend-scale">
                 <span>Light</span>
                 <span>Moderate</span>
                 <span>Heavy</span>
+                <span>Very Heavy</span>
               </div>
             </div>
           )}
@@ -275,18 +233,25 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
             <div className="legend-content">
               <div className="legend-item">
                 <div className="legend-color" style={{ background: 'linear-gradient(to right, #f3f4f6, #60a5fa, #1e40af)' }}></div>
-                <span>Wind Speed (km/h)</span>
+                <span>Satellite (Infrared) - Cloud patterns indicate wind flow</span>
               </div>
               <div className="legend-scale">
-                <span>Calm</span>
-                <span>Moderate</span>
-                <span>Strong</span>
+                <span>Clear</span>
+                <span>Cloudy</span>
+                <span>Dense Clouds</span>
               </div>
             </div>
           )}
-          <p className="legend-note">
-            Weather patterns shown based on 5-day forecast data from WeatherAPI.com.
-          </p>
+          {overlayError && (
+            <p className="legend-error" style={{ color: '#d32f2f', marginTop: '0.5rem', fontSize: '0.875rem' }}>
+              {overlayError}
+            </p>
+          )}
+          {!overlayError && (
+            <p className="legend-note">
+              Real-time weather map data provided by Weatherbit.io.
+            </p>
+          )}
         </div>
       )}
       
@@ -327,44 +292,50 @@ const WeatherMap = memo(({ weatherData, onLocationSelect }: WeatherMapProps) => 
             );
           })}
           
-          {/* Weather markers based on forecast data */}
-          {weatherMarkers.map((marker, index) => {
-            const markerPixel = latLonToPixel(marker.lat, marker.lon, zoom);
-            const centerPixel = latLonToPixel(mapCenter.lat, mapCenter.lon, zoom);
-            
-            // Calculate position relative to container center
-            const offsetX = markerPixel.x - centerPixel.x;
-            const offsetY = markerPixel.y - centerPixel.y;
-            
+          {/* Weather overlay tiles from Weatherbit.io */}
+          {overlayTiles.map((tile) => {
+            const position = getTilePosition(tile.x, tile.y);
+            // Adjust opacity based on map type for better visibility
+            const opacity = mapType === 'temp' ? 0.8 : mapType === 'precipitation' ? 0.75 : 0.7;
             return (
-              <div
-                key={`marker-${mapType}-${index}`}
-                className="weather-marker"
+              <img
+                key={`overlay-${tile.x}-${tile.y}-${zoom}-${mapType}`}
+                src={tile.url}
+                alt={`${mapType} weather overlay`}
+                className="map-tile map-tile-overlay"
                 style={{
                   position: 'absolute',
-                  left: `calc(50% + ${offsetX}px)`,
-                  top: `calc(50% + ${offsetY}px)`,
+                  left: position.left,
+                  top: position.top,
                   transform: 'translate(-50%, -50%)',
-                  width: `${marker.size}px`,
-                  height: `${marker.size}px`,
-                  borderRadius: '50%',
-                  backgroundColor: marker.color,
-                  border: '2px solid rgba(255, 255, 255, 0.8)',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  color: '#fff',
-                  textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
+                  width: '256px',
+                  height: '256px',
+                  opacity: opacity,
                   pointerEvents: 'none',
-                  zIndex: 10
+                  zIndex: 3,
+                  imageRendering: 'auto'
                 }}
-                title={marker.label}
-              >
-                {marker.size > 50 && marker.label}
-              </div>
+                loading="lazy"
+                crossOrigin="anonymous"
+                onError={(e) => {
+                  // Track overlay tile errors
+                  const img = e.target as HTMLImageElement;
+                  console.error(`Failed to load ${mapType} tile:`, tile.url);
+                  img.style.display = 'none';
+                  
+                  // Set error message if not already set
+                  if (!overlayError) {
+                    setOverlayError(`Weather overlay tiles unavailable for ${mapType}. The API key may need activation or a paid subscription may be required.`);
+                  }
+                }}
+                onLoad={() => {
+                  // Clear error if tiles load successfully
+                  console.log(`Successfully loaded ${mapType} tile:`, tile.url);
+                  if (overlayError) {
+                    setOverlayError(null);
+                  }
+                }}
+              />
             );
           })}
         </div>

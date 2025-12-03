@@ -3,6 +3,9 @@ import { WeatherData } from '../App';
 // WeatherAPI.com API key
 const API_KEY = '3a1a08277b2d41e3902203846250212';
 
+// Weatherbit.io API key for weather maps
+const WEATHERBIT_API_KEY = '0aa541c2f67d4fbeb59fb5f06e5ff51f';
+
 // Base URL for Weather API (WeatherAPI.com used as an example)
 const BASE_URL = 'https://api.weatherapi.com/v1';
 
@@ -435,6 +438,35 @@ export const pixelToLatLon = (
 export const getMapTileUrl = (x: number, y: number, zoom: number): string => {
   // Using OpenStreetMap tiles (free, no API key required)
   return `https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`;
+};
+
+/**
+ * Get Weatherbit.io weather map tile URL
+ * @param x - Tile X coordinate
+ * @param y - Tile Y coordinate
+ * @param zoom - Zoom level
+ * @param mapType - Type of weather overlay ('precipitation', 'temp', 'wind', or 'clouds')
+ * @returns URL string for the weather overlay tile
+ */
+export const getWeatherbitMapTileUrl = (
+  x: number,
+  y: number,
+  zoom: number,
+  mapType: 'precipitation' | 'temp' | 'wind' | 'clouds'
+): string => {
+  // Map our map types to Weatherbit.io field names
+  const fieldMap: Record<string, string> = {
+    precipitation: 'catprecipdbz', // Categorical Precipitation
+    temp: 'temp2m', // 2 Meter Air Temperature
+    wind: 'fullsat', // Satellite (Infrared) - closest option for wind visualization
+    clouds: 'fullsat' // Satellite (Infrared)
+  };
+  
+  const field = fieldMap[mapType] || 'catprecipdbz';
+  
+  // Weatherbit.io map tile URL format:
+  // https://maps.weatherbit.io/v2.0/singleband/{field}/latest/{z}/{x}/{y}.png?key=YOUR_API_KEY
+  return `https://maps.weatherbit.io/v2.0/singleband/${field}/latest/${zoom}/${x}/${y}.png?key=${WEATHERBIT_API_KEY}`;
 };
 
 /**
