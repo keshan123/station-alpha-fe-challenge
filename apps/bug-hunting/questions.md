@@ -12,6 +12,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: The error was caught by the browser's runtime error handling, showing "Uncaught ReferenceError: e is not defined at TodoForm (TodoForm.tsx:15:28)" in the console.
    - **How did you fix it?**: Changed the `onChange` handler from `onChange={setInput(e.target.value)}` to `onChange={(e) => setInput(e.target.value)}`. This wraps the call in an arrow function that properly receives the event parameter `e`, making it available in the correct scope.
 
+   **Bug #2: TypeError in TodoList.tsx**
+   - **What was the issue?**: On line 4 of `TodoList.tsx`, there was a `TypeError: Cannot read properties of null (reading 'map')`. The `todos` prop was `null` because in `App.tsx` line 8, the `todos` state was initialized as `null` instead of an empty array. When `TodoList` tried to call `todos.map()`, it failed because `null` doesn't have a `map` method.
+   - **How did you identify it?**: The error was caught by the browser's runtime error handling, showing "Uncaught TypeError: Cannot read properties of null (reading 'map') at TodoList (TodoList.tsx:4:14)" in the console.
+   - **How did you fix it?**: Changed the initial state in `App.tsx` from `useState(null)` to `useState([])`. This initializes `todos` as an empty array, which has the `map` method and prevents the error. An empty array is also the correct initial value for a list that will be populated with todo items.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?

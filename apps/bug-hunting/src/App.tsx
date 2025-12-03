@@ -5,7 +5,7 @@ import TodoForm from './components/TodoForm'
 import TodoFilter from './components/TodoFilter'
 
 const App = () => {
-  const [todos, setTodos] = useState(null)
+  const [todos, setTodos] = useState([])
   const [filter, setFilter] = useState()
   
   const addTodo = (text) => {
