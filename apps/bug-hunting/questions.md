@@ -42,6 +42,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: This was identified through a browser warning message: "A form field element has neither an id nor a name attribute. This might prevent the browser from correctly autofilling the form."
    - **How did you fix it?**: Added both `name="todo"` and `id="todo-input"` attributes to the input element. The `name` attribute allows the browser to identify the field for autofill, and the `id` attribute provides a unique identifier for accessibility and potential label association.
 
+   **Bug #8: Adding New Tasks Fails in TodoForm.tsx and App.tsx**
+   - **What was the issue?**: Multiple issues prevented adding new tasks: (1) `TodoForm` component was rendered without the required `onAdd` prop in `App.tsx` line 52, causing `onAdd` to be `undefined` when called on line 7 of `TodoForm.tsx`. (2) The `handleSubmit` function didn't prevent default form submission, causing page refreshes. (3) The `addTodo` function in `App.tsx` was mutating the todos array directly with `todos.push()`, which violates React's immutability principle and may not trigger re-renders. (4) New todos were missing `id` properties, which are needed for toggle and delete operations.
+   - **How did you identify it?**: This was identified when attempting to add a new task - the form submission failed, likely throwing an error because `onAdd` was undefined. Testing the add functionality revealed the issue.
+   - **How did you fix it?**: Fixed multiple issues: (1) Added `onAdd={addTodo}` prop to `<TodoForm />` in `App.tsx`. (2) Added `e.preventDefault()` in `handleSubmit` to prevent form submission and page refresh, and added input validation and clearing. (3) Changed `addTodo` to use immutable state update: `setTodos([...todos, newTodo])` instead of mutating the array. (4) Added `id: Date.now()` to new todos to ensure each todo has a unique identifier.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?

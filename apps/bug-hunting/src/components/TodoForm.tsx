@@ -4,7 +4,11 @@ const TodoForm = ({ onAdd }) => {
   const [input, setInput] = useState("")
 
   const handleSubmit = (e) => {
-    onAdd(input)
+    e.preventDefault()
+    if (input.trim()) {
+      onAdd(input)
+      setInput("")
+    }
   }
 
   return (

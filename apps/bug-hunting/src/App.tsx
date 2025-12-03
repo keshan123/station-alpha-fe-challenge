@@ -9,8 +9,8 @@ const App = () => {
   const [filter, setFilter] = useState()
   
   const addTodo = (text) => {
-    todos.push({ text, completed: false })
-    setTodos(todos)
+    const newTodo = { id: Date.now(), text, completed: false }
+    setTodos([...todos, newTodo])
   }
   
   const toggleTodo = (id) => {
@@ -49,7 +49,7 @@ const App = () => {
     <div className="app">
       <h1>Todo App</h1>
       
-      <TodoForm />
+      <TodoForm onAdd={addTodo} />
       
       <TodoList 
         todos={filteredTodos()} 
