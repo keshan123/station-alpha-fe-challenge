@@ -22,6 +22,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: The error was caught by the browser's runtime error handling, showing "Uncaught ReferenceError: active is not defined at TodoFilter (TodoFilter.tsx:16:36)" in the console.
    - **How did you fix it?**: Changed `filter === active` to `filter === "active"` by adding quotes around `active` to make it a string literal. This correctly compares the `filter` prop value to the string `"active"` instead of trying to reference an undefined variable.
 
+   **Bug #4: Infinite Loop in TodoFilter.tsx**
+   - **What was the issue?**: On line 31 of `TodoFilter.tsx`, there was an infinite loop causing "Maximum update depth exceeded" error. The `onClick` handler was written as `onClick={onClearCompleted()}` which immediately calls the function during render instead of passing a function reference. This caused the component to: render → call `clearCompleted()` → update state → re-render → call `clearCompleted()` again → infinite loop.
+   - **How did you identify it?**: The error was caught by React's error handling, showing "Maximum update depth exceeded" and "There was an error during concurrent rendering" in the console. The stack trace pointed to `clearCompleted` at `App.tsx:45:5` and `TodoFilter.tsx:31:18`.
+   - **How did you fix it?**: Changed `onClick={onClearCompleted()}` to `onClick={onClearCompleted}`. This passes a function reference to the `onClick` handler instead of calling the function immediately. Now the function is only called when the button is actually clicked, not on every render.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?

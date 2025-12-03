@@ -28,7 +28,7 @@ const TodoFilter = ({ filter, onFilter, onClearCompleted }) => {
       
       <button 
         className="clear-completed"
-        onClick={onClearCompleted()}
+        onClick={onClearCompleted}
       >
         Clear completed
       </button>
