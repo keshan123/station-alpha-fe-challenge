@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import './App.css'
 import SearchBar from './components/SearchBar'
 import CurrentWeather from './components/CurrentWeather'
-import { getCurrentWeather, getWeatherForecast } from './services/weatherApi'
+import Forecast from './components/Forecast'
+import { getCurrentWeather, getWeatherForecast, WeatherAPIError } from './services/weatherApi'
 
 // Types for weather data
 export interface WeatherData {
@@ -105,8 +106,14 @@ function App() {
       const forecastData = await getWeatherForecast(location, 5);
       setWeatherData(forecastData);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch weather data';
-      setError(errorMessage);
+      // Handle specific error types
+      if (err instanceof WeatherAPIError) {
+        setError(err.message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to fetch weather data. Please try again.');
+      }
       setWeatherData(null);
     } finally {
       setIsLoading(false);
@@ -143,88 +150,46 @@ function App() {
       </header>
 
       <main className="app-content">
-        <section className="instructions">
-          <h2>API Integration Challenge</h2>
-          <p>
-            Welcome to the Weather Dashboard API Integration Challenge! Your task is to implement
-            a weather application that integrates with a public weather API.
-          </p>
-          <div className="task-list">
-            <h3>Your Tasks:</h3>
-            <ol>
-              <li>
-                <strong>Current Weather Display</strong>
-                <p>Implement a search function and display current weather conditions for the searched location.</p>
-              </li>
-              <li>
-                <strong>Search Functionality</strong>
-                <p>Add autocomplete/suggestions for city search and remember recent searches.</p>
-              </li>
-              <li>
-                <strong>Extended Forecast</strong>
-                <p>Show a 5-day forecast with temperature and conditions.</p>
-              </li>
-              <li>
-                <strong>Weather Map</strong>
-                <p>Implement a visual map showing weather patterns and allow users to select locations from the map.</p>
-              </li>
-              <li>
-                <strong>Weather Alerts</strong>
-                <p>Display any weather alerts or warnings for the selected location.</p>
-              </li>
-            </ol>
-          </div>
-          <div className="api-info">
-            <h3>Recommended APIs:</h3>
-            <ul>
-              <li><a href="https://www.weatherapi.com/" target="_blank" rel="noopener noreferrer">WeatherAPI.com</a></li>
-              <li><a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer">OpenWeatherMap</a></li>
-              <li><a href="https://www.visualcrossing.com/weather-api" target="_blank" rel="noopener noreferrer">Visual Crossing Weather</a></li>
-            </ul>
-          </div>
-        </section>
+        {/* Search Component */}
+        <SearchBar 
+          onSearch={handleSearch}
+          searchHistory={searchHistory}
+          addToSearchHistory={addToSearchHistory}
+        />
 
-        <section className="implementation-area">
-          <h2>Your Implementation</h2>
+        {/* Weather Display */}
+        <div className="weather-display">
+          {isLoading && <div className="loading">Loading weather data...</div>}
           
-          {/* Search Component */}
-          <SearchBar 
-            onSearch={handleSearch}
-            searchHistory={searchHistory}
-            addToSearchHistory={addToSearchHistory}
-          />
-
-          {/* Weather Display */}
-          <div className="weather-display">
-            {isLoading && <div className="loading">Loading weather data...</div>}
-            
-            {error && (
-              <div className="error-message">
-                <p>Error: {error}</p>
-                <p>Please try searching for a different location.</p>
-              </div>
-            )}
-            
-            {!isLoading && !error && !weatherData && (
-              <div className="no-data">
-                <p>Search for a location to see weather information</p>
-                <p className="hint">Try searching for a city name, zip code, or coordinates</p>
-              </div>
-            )}
-            
-            {weatherData && !isLoading && (
-              <div className="weather-content">
-                {/* Current Weather */}
-                <CurrentWeather weatherData={weatherData} />
-              </div>
-            )}
-          </div>
-        </section>
+          {error && (
+            <div className="error-message">
+              <p>Error: {error}</p>
+              <p>Please try searching for a different location.</p>
+            </div>
+          )}
+          
+          {!isLoading && !error && !weatherData && (
+            <div className="no-data">
+              <p>Search for a location to see weather information</p>
+              <p className="hint">Try searching for a city name, zip code, or coordinates</p>
+            </div>
+          )}
+          
+          {weatherData && !isLoading && (
+            <div className="weather-content">
+              {/* Current Weather */}
+              <CurrentWeather weatherData={weatherData} />
+              
+              {/* Extended Forecast */}
+              <Forecast weatherData={weatherData} />
+            </div>
+          )}
+        </div>
       </main>
 
       <footer className="app-footer">
         <p>
-          API Integration Challenge | Created for Station Alpha Frontend Developer Interviews
+          Weather Dashboard | Powered by WeatherAPI.com
         </p>
       </footer>
     </div>

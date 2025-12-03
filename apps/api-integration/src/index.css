@@ -65,6 +65,19 @@ button:focus-visible {
   }
 }
 
+/* Accessibility - Visually hidden but available to screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
 /* Search Bar Styles */
 .search-bar-container {
   margin-bottom: 2rem;
@@ -77,6 +90,7 @@ button:focus-visible {
 
 .search-input-wrapper {
   display: flex;
+  position: relative;
 }
 
 .search-input {
@@ -85,6 +99,12 @@ button:focus-visible {
   font-size: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px 0 0 4px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
 }
 
 .search-button {
@@ -95,10 +115,22 @@ button:focus-visible {
   border-radius: 0 4px 4px 0;
   cursor: pointer;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
 }
 
 .search-button:hover {
   background-color: #1669d6;
+}
+
+.search-button-text {
+  display: inline;
+}
+
+.search-button-icon {
+  display: none;
 }
 
 /* Combined dropdown container */
@@ -127,10 +159,19 @@ button:focus-visible {
   padding: 0.75rem 1rem;
   cursor: pointer;
   border-bottom: 1px solid #eee;
+  outline: none;
 }
 
-.suggestion-item:hover, .history-item:hover {
-  background-color: #f5f5f5;
+.suggestion-item:hover, .history-item:hover,
+.suggestion-item.focused, .history-item.focused {
+  background-color: #e3f2fd;
+}
+
+.suggestion-item:focus, .history-item:focus,
+.suggestion-item.focused, .history-item.focused {
+  background-color: #bbdefb;
+  outline: 2px solid #1a73e8;
+  outline-offset: -2px;
 }
 
 .suggestion-item:last-child {
@@ -261,19 +302,23 @@ button:focus-visible {
 }
 
 .forecast-cards {
-  display: flex;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
   padding-bottom: 0.5rem;
 }
 
 .forecast-day {
-  min-width: 120px;
   padding: 1rem;
   background-color: #f9f9f9;
   border-radius: 8px;
   text-align: center;
-  flex: 1;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.forecast-day:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .forecast-day h4 {
@@ -494,15 +539,21 @@ button:focus-visible {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .weather-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  .search-button-text {
+    display: none;
   }
-  
+
+  .search-button-icon {
+    display: flex;
+  }
+
+  .search-button {
+    min-width: 44px;
+    padding: 0.75rem;
+  }
+
   .forecast-cards {
-    overflow-x: auto;
-    flex-wrap: nowrap;
+    grid-template-columns: repeat(2, 1fr);
   }
   
   .map-controls {
@@ -516,5 +567,11 @@ button:focus-visible {
   
   .alert-timing {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .forecast-cards {
+    grid-template-columns: 1fr;
   }
 }

@@ -6,6 +6,96 @@ const API_KEY = '3a1a08277b2d41e3902203846250212';
 // Base URL for Weather API (WeatherAPI.com used as an example)
 const BASE_URL = 'https://api.weatherapi.com/v1';
 
+// Request timeout in milliseconds
+const REQUEST_TIMEOUT = 10000; // 10 seconds
+
+/**
+ * Custom error class for API errors
+ */
+export class WeatherAPIError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public code?: string
+  ) {
+    super(message);
+    this.name = 'WeatherAPIError';
+  }
+}
+
+/**
+ * Fetch with timeout
+ */
+const fetchWithTimeout = async (url: string, timeout: number = REQUEST_TIMEOUT): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new WeatherAPIError('Request timeout. Please check your internet connection and try again.', 408, 'TIMEOUT');
+    }
+    throw error;
+  }
+};
+
+/**
+ * Handle API response errors
+ */
+const handleAPIError = async (response: Response, defaultMessage: string): Promise<never> => {
+  let errorMessage = defaultMessage;
+  let errorCode: string | undefined;
+
+  try {
+    const errorData = await response.json();
+    
+    // WeatherAPI.com error format
+    if (errorData.error) {
+      errorMessage = errorData.error.message || defaultMessage;
+      errorCode = errorData.error.code;
+    }
+  } catch {
+    // If JSON parsing fails, use status-based messages
+    switch (response.status) {
+      case 400:
+        errorMessage = 'Invalid request. Please check your search query.';
+        errorCode = 'BAD_REQUEST';
+        break;
+      case 401:
+        errorMessage = 'API authentication failed. Please check your API key.';
+        errorCode = 'UNAUTHORIZED';
+        break;
+      case 403:
+        errorMessage = 'API access forbidden. You may have exceeded your rate limit.';
+        errorCode = 'FORBIDDEN';
+        break;
+      case 404:
+        errorMessage = 'Location not found. Please try a different search.';
+        errorCode = 'NOT_FOUND';
+        break;
+      case 429:
+        errorMessage = 'Too many requests. Please wait a moment and try again.';
+        errorCode = 'RATE_LIMIT';
+        break;
+      case 500:
+      case 502:
+      case 503:
+      case 504:
+        errorMessage = 'Weather service is temporarily unavailable. Please try again later.';
+        errorCode = 'SERVER_ERROR';
+        break;
+      default:
+        errorMessage = `Request failed with status ${response.status}. Please try again.`;
+    }
+  }
+
+  throw new WeatherAPIError(errorMessage, response.status, errorCode);
+};
+
 /**
  * Get current weather data for a location
  * @param location - City name, zip code, or coordinates
@@ -20,15 +110,21 @@ export const getCurrentWeather = async (location: string): Promise<WeatherData> 
       return cachedData;
     }
 
-    // Make API call to WeatherAPI.com
-    const response = await fetch(`${BASE_URL}/current.json?key=${API_KEY}&q=${encodeURIComponent(location)}&aqi=yes`);
+    // Make API call to WeatherAPI.com with timeout
+    const url = `${BASE_URL}/current.json?key=${API_KEY}&q=${encodeURIComponent(location)}&aqi=yes`;
+    const response = await fetchWithTimeout(url);
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `Weather data not found for ${location}`);
+      await handleAPIError(response, `Weather data not found for ${location}`);
     }
     
     const data = await response.json();
+    
+    // Validate response data
+    if (!data || !data.location || !data.current) {
+      throw new WeatherAPIError('Invalid response from weather service. Please try again.', 500, 'INVALID_RESPONSE');
+    }
+    
     const transformedData = transformWeatherData(data);
     
     // Cache the result for 10 minutes
@@ -36,8 +132,23 @@ export const getCurrentWeather = async (location: string): Promise<WeatherData> 
     
     return transformedData;
   } catch (error) {
+    // Re-throw WeatherAPIError as-is
+    if (error instanceof WeatherAPIError) {
+      throw error;
+    }
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new WeatherAPIError('Network error. Please check your internet connection and try again.', 0, 'NETWORK_ERROR');
+    }
+    
+    // Handle other errors
     console.error('Error fetching current weather:', error);
-    throw error;
+    throw new WeatherAPIError(
+      error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+      0,
+      'UNKNOWN_ERROR'
+    );
   }
 };
 
@@ -59,17 +170,21 @@ export const getWeatherForecast = async (location: string, days: number = 5): Pr
       return cachedData;
     }
 
-    // Make API call to WeatherAPI.com with alerts enabled
-    const response = await fetch(
-      `${BASE_URL}/forecast.json?key=${API_KEY}&q=${encodeURIComponent(location)}&days=${forecastDays}&alerts=yes&aqi=yes`
-    );
+    // Make API call to WeatherAPI.com with alerts enabled and timeout
+    const url = `${BASE_URL}/forecast.json?key=${API_KEY}&q=${encodeURIComponent(location)}&days=${forecastDays}&alerts=yes&aqi=yes`;
+    const response = await fetchWithTimeout(url);
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `Weather forecast not found for ${location}`);
+      await handleAPIError(response, `Weather forecast not found for ${location}`);
     }
     
     const data = await response.json();
+    
+    // Validate response data
+    if (!data || !data.location || !data.current) {
+      throw new WeatherAPIError('Invalid response from weather service. Please try again.', 500, 'INVALID_RESPONSE');
+    }
+    
     const transformedData = transformWeatherData(data);
     
     // Cache the result for 30 minutes (forecast updates less frequently)
@@ -77,8 +192,23 @@ export const getWeatherForecast = async (location: string, days: number = 5): Pr
     
     return transformedData;
   } catch (error) {
+    // Re-throw WeatherAPIError as-is
+    if (error instanceof WeatherAPIError) {
+      throw error;
+    }
+    
+    // Handle network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new WeatherAPIError('Network error. Please check your internet connection and try again.', 0, 'NETWORK_ERROR');
+    }
+    
+    // Handle other errors
     console.error('Error fetching weather forecast:', error);
-    throw error;
+    throw new WeatherAPIError(
+      error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.',
+      0,
+      'UNKNOWN_ERROR'
+    );
   }
 };
 
@@ -118,33 +248,52 @@ export const searchLocations = async (query: string): Promise<any[]> => {
       return cachedData;
     }
 
-    // Make API call to WeatherAPI.com search endpoint
-    const response = await fetch(`${BASE_URL}/search.json?key=${API_KEY}&q=${encodeURIComponent(query)}`);
+    // Make API call to WeatherAPI.com search endpoint with timeout
+    const url = `${BASE_URL}/search.json?key=${API_KEY}&q=${encodeURIComponent(query)}`;
+    const response = await fetchWithTimeout(url);
     
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || 'Location search failed');
+      // For search, we don't want to show errors to users, just return empty array
+      // But log it for debugging
+      try {
+        await handleAPIError(response, 'Location search failed');
+      } catch (apiError) {
+        console.warn('Search API error (silently handled):', apiError);
+      }
+      return [];
     }
     
     const data = await response.json();
     
-    // Transform the response to match our expected format
-    const suggestions = Array.isArray(data) ? data.map((item: any) => ({
+    // Validate and transform the response
+    if (!Array.isArray(data)) {
+      console.warn('Invalid search response format');
+      return [];
+    }
+    
+    const suggestions = data.map((item: any) => ({
       id: item.id,
       name: `${item.name}, ${item.region ? item.region + ', ' : ''}${item.country}`,
       region: item.region,
       country: item.country,
       lat: item.lat,
       lon: item.lon
-    })) : [];
+    }));
     
     // Cache search results for 1 hour (location data doesn't change often)
     cacheWeatherData(cacheKey, suggestions, 60);
     
     return suggestions;
   } catch (error) {
-    console.error('Error searching locations:', error);
-    // Return empty array on error instead of throwing
+    // For search, silently handle errors and return empty array
+    // This prevents search errors from disrupting the user experience
+    if (error instanceof WeatherAPIError && error.code === 'TIMEOUT') {
+      console.warn('Search request timeout (silently handled)');
+    } else if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.warn('Search network error (silently handled)');
+    } else {
+      console.error('Error searching locations:', error);
+    }
     return [];
   }
 };
