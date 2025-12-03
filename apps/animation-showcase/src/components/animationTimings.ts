@@ -11,10 +11,10 @@ export const ANIMATION_TIMINGS = {
   ICON_CENTER: 250,          // Duration for plane icon to move to center
 
   // Phase 3: Button compresses
-  BUTTON_COMPRESS: 250,      // Duration for button to compress to 58px
+  BUTTON_COMPRESS: 300,      // Duration for button to compress to 58px
 
   // Phase 4: Button relaxes
-  BUTTON_RELAX: 1000,         // Duration for button to relax to 68px
+  BUTTON_RELAX: 1100,         // Duration for button to relax to 68px
 
   // Phase 5: SVG swap (plane to tick)
   ICON_SWAP: 500,            // Duration for SVG swap (plane to tick)
