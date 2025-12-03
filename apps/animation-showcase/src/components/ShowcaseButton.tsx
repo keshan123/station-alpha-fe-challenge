@@ -31,6 +31,11 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
   const isIconOnLeft = animationState === 'button-expanding' || animationState === 'idle';
 
   const handleClick = () => {
+    // Prevent clicks if animation is already in progress or completed
+    if (animationState !== 'idle') {
+      return;
+    }
+
     // Reset success text visibility
     setIsSuccessTextVisible(false);
     // Step 1: Start text fading
@@ -40,7 +45,7 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
     setTimeout(() => {
       setAnimationState('plane-centering');
       
-      // Step 3: After plane reaches center, start button compressing
+      // Step 3: Start button compressing when plane centering is 80% complete
       setTimeout(() => {
         setAnimationState('button-compressing');
         
@@ -48,7 +53,7 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
         setTimeout(() => {
           setAnimationState('button-relaxing');
           
-          // Step 5: After button relaxes, start SVG swapping
+          // Step 5: Start SVG swapping when button relaxing is 80% complete
           setTimeout(() => {
             setAnimationState('svg-swapping');
             
@@ -59,11 +64,11 @@ const ShowcaseButton: React.FC<ShowcaseButtonProps> = ({
               setTimeout(() => {
                 setIsSuccessTextVisible(true);
               }, ANIMATION_TIMINGS.TEXT_FADE_IN_DELAY);
-            }, ANIMATION_TIMINGS.ICON_SWAP);
-          }, ANIMATION_TIMINGS.BUTTON_RELAX);
-        }, ANIMATION_TIMINGS.BUTTON_COMPRESS);
-      }, ANIMATION_TIMINGS.ICON_CENTER);
-    }, ANIMATION_TIMINGS.TEXT_FADE_OUT);
+            }, ANIMATION_TIMINGS.ICON_SWAP + ANIMATION_TIMINGS.DELAY_AFTER_ICON_SWAP);
+          }, ANIMATION_TIMINGS.BUTTON_RELAX * 0.8 + ANIMATION_TIMINGS.DELAY_AFTER_BUTTON_RELAX);
+        }, ANIMATION_TIMINGS.BUTTON_COMPRESS + ANIMATION_TIMINGS.DELAY_AFTER_BUTTON_COMPRESS);
+      }, ANIMATION_TIMINGS.ICON_CENTER * 0.8 + ANIMATION_TIMINGS.DELAY_AFTER_ICON_CENTER);
+    }, ANIMATION_TIMINGS.TEXT_FADE_OUT + ANIMATION_TIMINGS.DELAY_AFTER_TEXT_FADE_OUT);
     
     if (onClick) {
       onClick();

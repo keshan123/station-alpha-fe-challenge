@@ -40,7 +40,7 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
     0 4px 10px rgba(0, 0, 0, 0.15);
   font-family: "Inter", "Google Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   outline: none;
-  cursor: pointer;
+  cursor: ${props => props.$animationState === 'idle' ? 'pointer' : 'not-allowed'};
   overflow: hidden;
   padding: 0 24px;
   display: flex;
@@ -83,7 +83,7 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
   }
 
   &:hover {
-    background-color: #0056b3;
+    background-color: ${props => props.$animationState === 'idle' ? '#0056b3' : '#196BFF'};
   }
 
   &:active {
