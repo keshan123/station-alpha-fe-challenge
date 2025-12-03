@@ -95,14 +95,18 @@ export const StyledButton = styled.button<{ $size: ButtonSize; $animationState: 
   }
 `;
 
-export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number }>`
+export const ButtonText = styled.span<{ $isVisible: boolean; $textLeft: number; $isHovered?: boolean }>`
   position: absolute;
   left: ${props => props.$textLeft}px;
   top: 50%;
   transform: translateY(-50%);
   white-space: nowrap;
   transition: opacity ${ANIMATION_TIMINGS.TEXT_FADE_OUT}ms ease-out;
-  opacity: ${props => props.$isVisible ? 1 : 0};
+  opacity: ${props => {
+    if (!props.$isVisible) return 0;
+    // On hover, keep text visible but slightly dimmed
+    return props.$isHovered ? 0.7 : 1;
+  }};
   pointer-events: none;
   
   @media (prefers-reduced-motion: reduce) {
