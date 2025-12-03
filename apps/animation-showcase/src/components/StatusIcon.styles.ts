@@ -1,10 +1,5 @@
 import styled, { css } from 'styled-components';
-
-const ICON_TRANSITION_DURATION = 300;
-
-const ICON_CENTER_TRANSITION_DURATION = 400;
-
-const ICON_MOVE_TO_LEFT_DURATION = 400;
+import { ANIMATION_TIMINGS } from './animationTimings';
 
 export const Container = styled.div<{ $iconSize: number; $isCentered: boolean; $iconLeft: number }>`
   position: absolute;
@@ -13,8 +8,8 @@ export const Container = styled.div<{ $iconSize: number; $isCentered: boolean; $
   transform: ${props => props.$isCentered ? 'translate(-50%, -50%)' : 'translateY(-50%)'};
   width: ${props => props.$iconSize}px;
   height: ${props => props.$iconSize}px;
-  transition: left ${props => props.$isCentered ? `${ICON_CENTER_TRANSITION_DURATION}ms` : `${ICON_MOVE_TO_LEFT_DURATION}ms`} cubic-bezier(0.4, 0, 0.2, 1),
-              transform ${props => props.$isCentered ? `${ICON_CENTER_TRANSITION_DURATION}ms` : `${ICON_MOVE_TO_LEFT_DURATION}ms`} cubic-bezier(0.4, 0, 0.2, 1);
+  transition: left ${props => props.$isCentered ? `${ANIMATION_TIMINGS.ICON_CENTER}ms` : `${ANIMATION_TIMINGS.ICON_MOVE_TO_LEFT}ms`} cubic-bezier(0.4, 0, 0.2, 1),
+              transform ${props => props.$isCentered ? `${ANIMATION_TIMINGS.ICON_CENTER}ms` : `${ANIMATION_TIMINGS.ICON_MOVE_TO_LEFT}ms`} cubic-bezier(0.4, 0, 0.2, 1);
   
   @media (prefers-reduced-motion: reduce) {
     transition: left 0.01ms, transform 0.01ms;
@@ -28,8 +23,8 @@ export const IconWrapper = styled.svg<{ $isActive: boolean }>`
   transform: translate(-50%, -50%);
   width: 100%;
   height: 100%;
-  transition: transform ${ICON_TRANSITION_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              opacity ${ICON_TRANSITION_DURATION}ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform ${ANIMATION_TIMINGS.ICON_SWAP}ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              opacity ${ANIMATION_TIMINGS.ICON_SWAP}ms cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: center;
   
   ${props => props.$isActive ? css`
