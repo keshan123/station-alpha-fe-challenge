@@ -27,6 +27,11 @@ Please answer the following questions about the bugs you identified and fixed:
    - **How did you identify it?**: The error was caught by React's error handling, showing "Maximum update depth exceeded" and "There was an error during concurrent rendering" in the console. The stack trace pointed to `clearCompleted` at `App.tsx:45:5` and `TodoFilter.tsx:31:18`.
    - **How did you fix it?**: Changed `onClick={onClearCompleted()}` to `onClick={onClearCompleted}`. This passes a function reference to the `onClick` handler instead of calling the function immediately. Now the function is only called when the button is actually clicked, not on every render.
 
+   **Bug #5: Invalid className Attribute in TodoFilter.tsx**
+   - **What was the issue?**: On line 10 of `TodoFilter.tsx`, there was a warning about receiving `false` for a non-boolean attribute `className`. The code used `className={filter === "all" && "active"}`, which when the condition is false, evaluates to `false` (a boolean) instead of a string. React expects className to be a string, not a boolean value.
+   - **How did you identify it?**: The error was caught by React's development mode warnings, showing "Received `false` for a non-boolean attribute `className`" in the console. React suggested using a ternary operator instead of the `&&` pattern for conditional className values.
+   - **How did you fix it?**: Changed `className={filter === "all" && "active"}` to `className={filter === "all" ? "active" : ""}`. This uses a ternary operator that always returns a string (either `"active"` or an empty string `""`), ensuring className always receives a valid string value instead of a boolean.
+
 2. **Technical Approach**: What debugging tools and techniques did you use to identify and fix the bugs?
 
 3. **Code Improvements**: Beyond fixing bugs, did you make any improvements to the code organization or structure? If so, what and why?
